@@ -1,0 +1,268 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const AnimationDemoApp());
+}
+
+class AnimationDemoApp extends StatelessWidget {
+  const AnimationDemoApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Flutter Animation Demo',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+      ),
+      home: const AnimationDemoScreen(),
+    );
+  }
+}
+
+class AnimationDemoScreen extends StatefulWidget {
+  const AnimationDemoScreen({super.key});
+
+  @override
+  State<AnimationDemoScreen> createState() => _AnimationDemoScreenState();
+}
+
+class _AnimationDemoScreenState extends State<AnimationDemoScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  final List<AnimationItem> items = const [
+    AnimationItem(
+      title: 'Fade Animation',
+      description: 'Gradually changes opacity from invisible to visible.',
+      icon: Icons.visibility,
+      color: Colors.blue,
+      type: AnimationType.fade,
+    ),
+    AnimationItem(
+      title: 'Slide Animation',
+      description: 'Moves the widget from the left into its final position.',
+      icon: Icons.swipe,
+      color: Colors.green,
+      type: AnimationType.slide,
+    ),
+    AnimationItem(
+      title: 'Scale Animation',
+      description: 'Grows the widget from a small size to its normal size.',
+      icon: Icons.zoom_in,
+      color: Colors.orange,
+      type: AnimationType.scale,
+    ),
+    AnimationItem(
+      title: 'Rotation Animation',
+      description: 'Rotates the widget around its center.',
+      icon: Icons.rotate_right,
+      color: Colors.purple,
+      type: AnimationType.rotation,
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    );
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void replayAnimations() {
+    _controller.reset();
+    _controller.forward();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Flutter Animation Effects'),
+        centerTitle: true,
+      ),
+      body: Column(
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
+            child: Text(
+              'Animation Framework Demo',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              'Four common Flutter animation effects demonstrated '
+              'using AnimationController and built-in transitions.',
+              textAlign: TextAlign.center,
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+
+                // Each item starts at a different point in the timeline.
+                final start = index * 0.15;
+                final end = (start + 0.5).clamp(0.0, 1.0);
+
+                final animation = CurvedAnimation(
+                  parent: _controller,
+                  curve: Interval(
+                    start,
+                    end,
+                    curve: Curves.easeOutBack,
+                  ),
+                );
+
+                return AnimatedListItem(
+                  item: item,
+                  animation: animation,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: replayAnimations,
+        icon: const Icon(Icons.refresh),
+        label: const Text('Replay'),
+      ),
+    );
+  }
+}
+
+enum AnimationType {
+  fade,
+  slide,
+  scale,
+  rotation,
+}
+
+class AnimationItem {
+  final String title;
+  final String description;
+  final IconData icon;
+  final Color color;
+  final AnimationType type;
+
+  const AnimationItem({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.color,
+    required this.type,
+  });
+}
+
+class AnimatedListItem extends StatelessWidget {
+  final AnimationItem item;
+  final Animation<double> animation;
+
+  const AnimatedListItem({
+    super.key,
+    required this.item,
+    required this.animation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Widget child = _buildCard();
+
+    switch (item.type) {
+      case AnimationType.fade:
+        child = FadeTransition(
+          opacity: animation,
+          child: child,
+        );
+        break;
+
+      case AnimationType.slide:
+        child = SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(-1.0, 0),
+            end: Offset.zero,
+          ).animate(animation),
+          child: child,
+        );
+        break;
+
+      case AnimationType.scale:
+        child = ScaleTransition(
+          scale: Tween<double>(
+            begin: 0.2,
+            end: 1.0,
+          ).animate(animation),
+          child: child,
+        );
+        break;
+
+      case AnimationType.rotation:
+        child = RotationTransition(
+          turns: Tween<double>(
+            begin: -0.5,
+            end: 0.0,
+          ).animate(animation),
+          child: child,
+        );
+        break;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: child,
+    );
+  }
+
+  Widget _buildCard() {
+    return Card(
+      elevation: 4,
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: CircleAvatar(
+          backgroundColor: item.color,
+          radius: 28,
+          child: Icon(
+            item.icon,
+            color: Colors.white,
+          ),
+        ),
+        title: Text(
+          item.title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(item.description),
+        ),
+      ),
+    );
+  }
+}
