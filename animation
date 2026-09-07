@@ -1,0 +1,147 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const AnimatedListApp());
+}
+
+class AnimatedListApp extends StatelessWidget {
+  const AnimatedListApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Animated List',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
+      ),
+      home: const AnimatedListScreen(),
+    );
+  }
+}
+
+class AnimatedListScreen extends StatefulWidget {
+  const AnimatedListScreen({super.key});
+
+  @override
+  State<AnimatedListScreen> createState() => _AnimatedListScreenState();
+}
+
+class _AnimatedListScreenState extends State<AnimatedListScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  final List<String> items = [
+    'HTML',
+    'CSS',
+    'JavaScript',
+    'Flutter',
+    'Dart',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _restartAnimation() {
+    _controller.reset();
+    _controller.forward();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Animated List Elements'),
+        centerTitle: true,
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          // Creates a separate interval for each list item.
+          final start = index * 0.15;
+          final end = (start + 0.5).clamp(0.0, 1.0);
+
+          final animation = CurvedAnimation(
+            parent: _controller,
+            curve: Interval(
+              start,
+              end,
+              curve: Curves.easeOut,
+            ),
+          );
+
+          return AnimatedListItem(
+            title: items[index],
+            animation: animation,
+            index: index,
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _restartAnimation,
+        tooltip: 'Replay animation',
+        child: const Icon(Icons.refresh),
+      ),
+    );
+  }
+}
+
+class AnimatedListItem extends StatelessWidget {
+  final String title;
+  final Animation<double> animation;
+  final int index;
+
+  const AnimatedListItem({
+    super.key,
+    required this.title,
+    required this.animation,
+    required this.index,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: animation,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(-0.8, 0),
+          end: Offset.zero,
+        ).animate(animation),
+        child: Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 3,
+          child: ListTile(
+            leading: CircleAvatar(
+              child: Text('${index + 1}'),
+            ),
+            title: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios),
+          ),
+        ),
+      ),
+    );
+  }
+}
